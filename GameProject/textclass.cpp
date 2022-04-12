@@ -739,7 +739,7 @@ bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext* de
 	strcat_s(mouseString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence1, mouseString, 20, 220, 0, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_sentence1, mouseString, 20, 160, 0, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -753,7 +753,7 @@ bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext* de
 	strcat_s(mouseString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence2, mouseString, 20, 240, 0, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_sentence2, mouseString, 20, 180, 0, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -916,7 +916,7 @@ bool TextClass::SetTime(float time, ID3D11DeviceContext* deviceContext)
 	strcat_s(timeString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_time, timeString, 20, 140, r, g, b, deviceContext);
+	result = UpdateSentence(m_time, timeString, 20, 60, r, g, b, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -965,7 +965,7 @@ bool TextClass::SetScreenWidth(ID3D11DeviceContext* deviceContext)
 	strcat_s(screenString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_screenWidthTxt, screenString, 20, 160, 0.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_screenWidthTxt, screenString, 20, 100, 0.0f, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -987,7 +987,7 @@ bool TextClass::SetScreenHeight(ID3D11DeviceContext* deviceContext)
 	strcat_s(screenString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_screenHeightTxt, screenString, 20, 180, 0.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_screenHeightTxt, screenString, 20, 120, 0.0f, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;

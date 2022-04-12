@@ -9,7 +9,6 @@ GraphicsClass::GraphicsClass()
 	m_Camera = 0;
 
 	m_SkyMap = 0;
-
 	m_Sea = 0;
 	m_Seafloor = 0;
 	m_Player = 0;
@@ -92,9 +91,6 @@ GraphicsClass::GraphicsClass()
 		Vector_Turret_Forward[i] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 		Vector_Turret_Right[i] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 		Vector_Turret_Up[i] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-		convoyHit[i] = false;
-		coastGuardCannonHit[i] = false;
 	}
 }
 
@@ -1422,10 +1418,8 @@ bool GraphicsClass::Frame(int fps, int cpu, float frameTime, int mouseX, int mou
 	result = m_Text->SetFps(fps, m_D3D->GetDeviceContext());
 	result = m_Text->SetCpu(cpu, m_D3D->GetDeviceContext());
 	result = m_Text->SetTime(m_time, m_D3D->GetDeviceContext());
-	result = m_Text->SetObject(num_total, m_D3D->GetDeviceContext());
 	result = m_Text->SetScreenWidth(m_D3D->GetDeviceContext());
 	result = m_Text->SetScreenHeight(m_D3D->GetDeviceContext());
-	result = m_Text->SetPolygon(m_indexCnt, m_D3D->GetDeviceContext());
 	result = m_Text->SetMousePosition(m_mouseX, m_mouseY, m_D3D->GetDeviceContext());
 	result = m_Text->SetAimState(isAimed, m_D3D->GetDeviceContext());
 	result = m_Text->SetPitchState(m_pitch, m_D3D->GetDeviceContext());
@@ -1441,10 +1435,10 @@ bool GraphicsClass::Frame(int fps, int cpu, float frameTime, int mouseX, int mou
 	m_Smoke_3->Frame(frameTime, m_D3D->GetDeviceContext(), speed / 200.0f, TYPE_3);
 
 	for (int i = 0; i < 3; i++) {
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			m_baseSmoke[i]->Frame(frameTime, m_D3D->GetDeviceContext(), speed / 200.0f, TYPE_4);
 		}
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			m_convoySmoke[i]->Frame(frameTime, m_D3D->GetDeviceContext(), speed / 200.0f, TYPE_4);
 		}
 	}
@@ -1505,8 +1499,8 @@ void GraphicsClass::SetPosition() {
 
 	if (accelate_Tilt > accelate_Tilt_Limit || playerPitch > accelate_Tilt_Limit) { isTilt = false; }
 	if (accelate_Tilt < -accelate_Tilt_Limit || playerPitch < -accelate_Tilt_Limit) { isTilt = true; }
-	if (isTilt == false) { accelate_Tilt -= 0.00003f * 0.0174532925f * m_fps_Calculate; }
-	if (isTilt == true) { accelate_Tilt += 0.00003f * 0.0174532925f * m_fps_Calculate; }
+	if (isTilt == false) { accelate_Tilt -= 0.00003f * 0.017f * m_fps_Calculate; }
+	if (isTilt == true) { accelate_Tilt += 0.00003f * 0.017f * m_fps_Calculate; }
 
 	m_playerPosition.y = m_playerPosition.y + accelate_Assend;
 	playerPitch = playerPitch + accelate_Tilt;
@@ -1575,7 +1569,6 @@ void GraphicsClass::SetPosition() {
 			, camYaw, camPitch);
 		m_Bullet[i]->SetCollider();
 	}
-
 
 	//스카이박스 행렬
 
@@ -1683,16 +1676,20 @@ void GraphicsClass::SetPosition() {
 	num_rocks = 5;
 
 	////////////////////////////////////////////////// Destructable Objects ////////////////////////////////////////////////// 
-	transMatrix_convoy[0] = XMMatrixTranslation(-163, 0, 33);
+
+	convoyInfo[0].position = XMFLOAT3(-163, 0, 33);
+	convoyInfo[1].position = XMFLOAT3(23, 0, 168);
+	convoyInfo[2].position = XMFLOAT3(96, 0, -101);
+
+	transMatrix_convoy[0] = XMMatrixTranslation(convoyInfo[0].position.x, convoyInfo[0].position.y, convoyInfo[0].position.z);
 	rotateMatrix_convoy[0] = XMMatrixRotationY(XMConvertToRadians(45));
 
-	transMatrix_convoy[1] = XMMatrixTranslation(23, 0, 168);
+	transMatrix_convoy[1] = XMMatrixTranslation(convoyInfo[1].position.x, convoyInfo[1].position.y, convoyInfo[1].position.z);
 	rotateMatrix_convoy[1] = XMMatrixRotationY(XMConvertToRadians(210));
 
-	transMatrix_convoy[2] = XMMatrixTranslation(96, 0, -101);
+	transMatrix_convoy[2] = XMMatrixTranslation(convoyInfo[2].position.x, convoyInfo[2].position.y, convoyInfo[2].position.z);
 	rotateMatrix_convoy[2] = XMMatrixRotationY(XMConvertToRadians(90));
 
-	num_convoy = 3;
 
 	transMatrix_coastGuardBase[0] = XMMatrixTranslation(107, 10, 105);
 	rotateMatrix_coastGuardBase[0] = XMMatrixRotationY(XMConvertToRadians(0));
@@ -1703,18 +1700,22 @@ void GraphicsClass::SetPosition() {
 	transMatrix_coastGuardBase[2] = XMMatrixTranslation(16, 18, 57);
 	rotateMatrix_coastGuardBase[2] = XMMatrixRotationY(XMConvertToRadians(0));
 
-	num_coastGuardBase = 3;
 
-	transMatrix_coastGuardCannon[0] = XMMatrixTranslation(107, 10, 105);
-	rotateMatrix_coastGuardCannon[0] = XMMatrixRotationY(XMConvertToRadians(0));
+	coastCannonInfo[0].position = XMFLOAT3(107, 10, 105);
+	coastCannonInfo[1].position = XMFLOAT3(-103, 12, 219);
+	coastCannonInfo[2].position = XMFLOAT3(16, 18, 57);
 
-	transMatrix_coastGuardCannon[1] = XMMatrixTranslation(-103, 12, 219);
-	rotateMatrix_coastGuardCannon[1] = XMMatrixRotationY(XMConvertToRadians(0));
+	transMatrix_coastGuardCannon[0] = XMMatrixTranslation(coastCannonInfo[0].position.x, coastCannonInfo[0].position.y, coastCannonInfo[0].position.z);
+	rotateMatrix_coastGuardCannon[0] = XMMatrixRotationY(LookAt(coastCannonInfo[0].position, playerPosition,
+		coastCannonInfo[0].DefaultForward, coastCannonInfo[0].DefaultRight));
 
-	transMatrix_coastGuardCannon[2] = XMMatrixTranslation(16, 18, 57);
-	rotateMatrix_coastGuardCannon[2] = XMMatrixRotationY(XMConvertToRadians(0));
+	transMatrix_coastGuardCannon[1] = XMMatrixTranslation(coastCannonInfo[1].position.x, coastCannonInfo[1].position.y, coastCannonInfo[1].position.z);
+	rotateMatrix_coastGuardCannon[1] = XMMatrixRotationY(LookAt(coastCannonInfo[1].position, playerPosition,
+		coastCannonInfo[1].DefaultForward, coastCannonInfo[1].DefaultRight));
 
-	num_coastGuardCannon = 3;
+	transMatrix_coastGuardCannon[2] = XMMatrixTranslation(coastCannonInfo[2].position.x, coastCannonInfo[2].position.y, coastCannonInfo[2].position.z);
+	rotateMatrix_coastGuardCannon[2] = XMMatrixRotationY(LookAt(coastCannonInfo[2].position, playerPosition,
+		coastCannonInfo[2].DefaultForward, coastCannonInfo[2].DefaultRight));
 
 	rotateMatrix_fire = XMMatrixRotationY(camYaw + XMConvertToRadians(180));
 	rotateMatrix_convoyfire = XMMatrixRotationY(camYaw + XMConvertToRadians(180));
@@ -1727,7 +1728,7 @@ void GraphicsClass::SetPosition() {
 		worldMatrix_lHouse[i] = scaleMatrix_lHouse * rotateMatrix_lHouse[i] * transMatrix_lHouse[i];
 		worldMatrix_convoy[i] = scaleMatrix_convoy * rotateMatrix_convoy[i] * transMatrix_convoy[i];
 		worldMatrix_coastGuardBase[i] = scaleMatrix_coastGuardBase * transMatrix_coastGuardBase[i];
-		worldMatrix_coastGuardCannon[i] = scaleMatrix_coastGuardCannon * transMatrix_coastGuardCannon[i];
+		worldMatrix_coastGuardCannon[i] = scaleMatrix_coastGuardCannon * rotateMatrix_coastGuardCannon[i] * transMatrix_coastGuardCannon[i];
 
 		worldMatrix_fire[i] = scaleMatrix_fire * rotateMatrix_fire * transMatrix_coastGuardBase[i] * transMatrix_fire;
 		worldMatrix_convoyfire[i] = scaleMatrix_convoyfire * rotateMatrix_convoyfire * transMatrix_convoy[i] * transMatrix_convoyfire;
@@ -1926,8 +1927,13 @@ void GraphicsClass::RestartScene() {
 	for (int i = 0; i < 3; i++) {
 		m_Bullet[i]->ProjReload(playerPosition + Vector_Turret[i]);
 
-		convoyHit[i] = false;
-		coastGuardCannonHit[i] = false;
+		convoyInfo[i].isDestroyed = false;
+		convoyInfo[i].health = 3;
+		convoyInfo[i].isHit = false;
+
+		coastCannonInfo[i].isDestroyed = false;
+		coastCannonInfo[i].health = 3;
+		coastCannonInfo[i].isHit = false;
 	}
 }
 
@@ -2183,7 +2189,7 @@ bool GraphicsClass::RenderTutorialGameRefractionToTexture()
 			m_Convoy[i]->GetTexture(), m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
 			clipPlane, rotateMatrix_convoy[i]);
 
-		if (!coastGuardCannonHit[i])
+		if (!coastCannonInfo[i].isDestroyed)
 		{
 			m_CoastGuardCannon[i]->Render(m_D3D->GetDeviceContext());
 			// Render the model using the light shader.
@@ -2224,7 +2230,7 @@ bool GraphicsClass::RenderTutorialGameRefractionToTexture()
 	// 정사각형 모델의 정점과 인덱스 버퍼를 그래픽 파이프 라인에 배치하여 그리기를 준비합니다.
 	for (int i = 0; i < 3; i++) {
 		m_Fire[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_Fire[i]->GetIndexCount(), worldMatrix_fire[i], viewMatrix, projectionMatrix,
 				m_Fire[i]->GetTexture1(), m_Fire[i]->GetTexture2(), m_Fire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2235,7 +2241,7 @@ bool GraphicsClass::RenderTutorialGameRefractionToTexture()
 		}
 
 		m_convoyFire[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_convoyFire[i]->GetIndexCount(), worldMatrix_convoyfire[i], viewMatrix, projectionMatrix,
 				m_convoyFire[i]->GetTexture1(), m_convoyFire[i]->GetTexture2(), m_convoyFire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2262,7 +2268,7 @@ bool GraphicsClass::RenderTutorialGameRefractionToTexture()
 
 	for (int i = 0; i < 3; i++) {
 		m_baseSmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_baseSmoke[i]->GetIndexCount(), worldMatrix_baseSmoke[i], viewMatrix, projectionMatrix,
 				m_baseSmoke[i]->GetTexture()))
 			{
@@ -2271,7 +2277,7 @@ bool GraphicsClass::RenderTutorialGameRefractionToTexture()
 		}
 
 		m_convoySmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_convoySmoke[i]->GetIndexCount(), worldMatrix_convoySmoke[i], viewMatrix, projectionMatrix,
 				m_convoySmoke[i]->GetTexture()))
 			{
@@ -2416,7 +2422,7 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 			m_Convoy[i]->GetTexture(), m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
 			clipPlane, rotateMatrix_convoy[i]);
 
-		if (!coastGuardCannonHit[i])
+		if (!coastCannonInfo[i].isDestroyed)
 		{
 			m_CoastGuardCannon[i]->Render(m_D3D->GetDeviceContext());
 			// Render the model using the light shader.
@@ -2457,7 +2463,7 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 	// 정사각형 모델의 정점과 인덱스 버퍼를 그래픽 파이프 라인에 배치하여 그리기를 준비합니다.
 	for (int i = 0; i < 3; i++) {
 		m_Fire[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_Fire[i]->GetIndexCount(), worldMatrix_fire[i], reflectionViewMatrix, projectionMatrix,
 				m_Fire[i]->GetTexture1(), m_Fire[i]->GetTexture2(), m_Fire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2468,7 +2474,7 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 		}
 
 		m_convoyFire[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_convoyFire[i]->GetIndexCount(), worldMatrix_convoyfire[i], reflectionViewMatrix, projectionMatrix,
 				m_convoyFire[i]->GetTexture1(), m_convoyFire[i]->GetTexture2(), m_convoyFire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2495,7 +2501,7 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 
 	for (int i = 0; i < 3; i++) {
 		m_baseSmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed || coastCannonInfo[i].isHit) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_baseSmoke[i]->GetIndexCount(), worldMatrix_baseSmoke[i], reflectionViewMatrix, projectionMatrix,
 				m_baseSmoke[i]->GetTexture()))
 			{
@@ -2504,7 +2510,7 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 		}
 
 		m_convoySmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed || convoyInfo[i].isHit) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_convoySmoke[i]->GetIndexCount(), worldMatrix_convoySmoke[i], reflectionViewMatrix, projectionMatrix,
 				m_convoySmoke[i]->GetTexture()))
 			{
@@ -2533,13 +2539,6 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 
 bool GraphicsClass::RenderTutorialGameScene()
 {
-	m_indexCnt = m_Island->getPolygon() * num_island
-		+ m_Player->getPolygon() + m_Seafloor->getPolygon() + m_Sea->getPolygon() + m_Turret->getPolygon() *
-		num_turret + m_Harbor->getPolygon() * num_harbor + m_lHouse->getPolygon() * num_iHouse
-		+ m_Rocks->getPolygon() * num_rocks;
-
-	num_total = 4 + num_island + num_turret + num_harbor + num_iHouse;
-
 	XMMATRIX viewMatrix, projectionMatrix, reflectionMatrix, orthoMatrix;
 	bool result;
 
@@ -2639,20 +2638,39 @@ bool GraphicsClass::RenderTutorialGameScene()
 			m_Bullet[0]->GetMinY(), m_Bullet[0]->GetMaxZ(), m_Bullet[0]->GetMinZ()))
 			|| (m_Convoy[i]->checkCollider(m_Bullet[1]->GetMaxX(), m_Bullet[1]->GetMinX(), m_Bullet[1]->GetMaxY(),
 				m_Bullet[1]->GetMinY(), m_Bullet[1]->GetMaxZ(), m_Bullet[1]->GetMinZ()))
-			|| (m_Convoy[i]->checkCollider(m_Bullet[0]->GetMaxX(), m_Bullet[2]->GetMinX(), m_Bullet[2]->GetMaxY(),
+			|| (m_Convoy[i]->checkCollider(m_Bullet[2]->GetMaxX(), m_Bullet[2]->GetMinX(), m_Bullet[2]->GetMaxY(),
 				m_Bullet[2]->GetMinY(), m_Bullet[2]->GetMaxZ(), m_Bullet[2]->GetMinZ())))
 		{
-			convoyHit[i] = true;
+			if (convoyInfo[i].isHit == false) {
+				convoyInfo[i].health--;
+			}
+			convoyInfo[i].isHit = true;
+		}
+		else {
+			convoyInfo[i].isHit = false;
 		}
 
 		if ((m_CoastGuardCannon[i]->checkCollider(m_Bullet[0]->GetMaxX(), m_Bullet[0]->GetMinX(), m_Bullet[0]->GetMaxY(),
 			m_Bullet[0]->GetMinY(), m_Bullet[0]->GetMaxZ(), m_Bullet[0]->GetMinZ()))
 			|| (m_CoastGuardCannon[i]->checkCollider(m_Bullet[1]->GetMaxX(), m_Bullet[1]->GetMinX(), m_Bullet[1]->GetMaxY(),
 				m_Bullet[1]->GetMinY(), m_Bullet[1]->GetMaxZ(), m_Bullet[1]->GetMinZ()))
-			|| (m_CoastGuardCannon[i]->checkCollider(m_Bullet[0]->GetMaxX(), m_Bullet[2]->GetMinX(), m_Bullet[2]->GetMaxY(),
+			|| (m_CoastGuardCannon[i]->checkCollider(m_Bullet[2]->GetMaxX(), m_Bullet[2]->GetMinX(), m_Bullet[2]->GetMaxY(),
 				m_Bullet[2]->GetMinY(), m_Bullet[2]->GetMaxZ(), m_Bullet[2]->GetMinZ())))
 		{
-			coastGuardCannonHit[i] = true;
+			if (coastCannonInfo[i].isHit == false) {
+				coastCannonInfo[i].health--;
+			}
+			coastCannonInfo[i].isHit = true;
+		}
+		else {
+			coastCannonInfo[i].isHit = false;
+		}
+
+		if (coastCannonInfo[i].health == 0) {
+			coastCannonInfo[i].isDestroyed = true;
+		}
+		if (convoyInfo[i].health == 0) {
+			convoyInfo[i].isDestroyed = true;
 		}
 	}
 
@@ -2707,7 +2725,7 @@ bool GraphicsClass::RenderTutorialGameScene()
 			m_Convoy[i]->GetTexture(), m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
 			m_Camera->GetPosition(), m_Light->GetSpecularColor(), m_Light->GetSpecularPower(), rotateMatrix_convoy[i]);
 
-		if (!coastGuardCannonHit[i])
+		if (!coastCannonInfo[i].isDestroyed)
 		{
 			m_CoastGuardCannon[i]->Render(m_D3D->GetDeviceContext());
 			// Render the model using the light shader.
@@ -2817,7 +2835,7 @@ bool GraphicsClass::RenderTutorialGameScene()
 	// 정사각형 모델의 정점과 인덱스 버퍼를 그래픽 파이프 라인에 배치하여 그리기를 준비합니다.
 	for (int i = 0; i < 3; i++) {
 		m_Fire[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_Fire[i]->GetIndexCount(), worldMatrix_fire[i], viewMatrix, projectionMatrix,
 				m_Fire[i]->GetTexture1(), m_Fire[i]->GetTexture2(), m_Fire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2828,7 +2846,7 @@ bool GraphicsClass::RenderTutorialGameScene()
 		}
 
 		m_convoyFire[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_convoyFire[i]->GetIndexCount(), worldMatrix_convoyfire[i], viewMatrix, projectionMatrix,
 				m_convoyFire[i]->GetTexture1(), m_convoyFire[i]->GetTexture2(), m_convoyFire[i]->GetTexture3(), fireTime, scrollSpeeds,
@@ -2858,7 +2876,7 @@ bool GraphicsClass::RenderTutorialGameScene()
 
 	for (int i = 0; i < 3; i++) {
 		m_baseSmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (coastGuardCannonHit[i]) {
+		if (coastCannonInfo[i].isDestroyed) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_baseSmoke[i]->GetIndexCount(), worldMatrix_baseSmoke[i], viewMatrix, projectionMatrix,
 				m_baseSmoke[i]->GetTexture()))
 			{
@@ -2867,7 +2885,7 @@ bool GraphicsClass::RenderTutorialGameScene()
 		}
 
 		m_convoySmoke[i]->Render(m_D3D->GetDeviceContext());
-		if (convoyHit[i]) {
+		if (convoyInfo[i].isDestroyed) {
 			if (!m_SmokeShaderClass->Render(m_D3D->GetDeviceContext(), m_convoySmoke[i]->GetIndexCount(), worldMatrix_convoySmoke[i], viewMatrix, projectionMatrix,
 				m_convoySmoke[i]->GetTexture()))
 			{
@@ -3136,4 +3154,33 @@ float GraphicsClass::LookAt(XMVECTOR ObjPos, XMVECTOR DefaultForward, XMVECTOR D
 		if (turretRad > XMConvertToRadians(90)) turretRad = turretRad - XMConvertToRadians(360);
 		return -Rad;
 	}
+}
+
+float GraphicsClass::LookAt(XMFLOAT3 objPos, XMVECTOR playerPos, XMVECTOR fowardVec, XMVECTOR rightVec)
+{
+	XMVECTOR objpos = XMLoadFloat3(&objPos);
+	XMVECTOR Cross_Dir;
+	XMVECTOR Cross_Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	Cross_Dir = objpos - playerPos;
+	fowardVec = XMVector3Normalize(fowardVec);
+	Cross_Dir = XMVector3Normalize(Cross_Dir);
+
+	float Radian;
+
+	XMVECTOR Dot = XMVector3Dot(crossForward, Cross_Dir);
+	Radian = (float)acos(XMVectorGetX(Dot));
+
+	Cross_Up = XMVector3Cross(fowardVec, rightVec); //마지막값은 up
+
+	if (XMVectorGetX(XMVector3Dot(rightVec, Cross_Dir)) > 0)
+	{
+		return Radian;
+	}
+
+	else
+	{
+		return -Radian;
+	}
+
 }

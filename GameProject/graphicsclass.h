@@ -52,6 +52,7 @@ const float SCREEN_NEAR = 1.0f;
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: GraphicsClass
 ////////////////////////////////////////////////////////////////////////////////
+
 class GraphicsClass
 {
 public:
@@ -103,9 +104,6 @@ public:
 	bool collisionWithFlag = false;
 	bool collisionWithContainer = false;
 
-	bool convoyHit[3];
-	bool coastGuardCannonHit[3];
-
 	float spacePressTime = 0.0f;
 	float m_time = 0.0f;
 
@@ -134,6 +132,23 @@ private:
 
 	XMMATRIX MoveChar(float, float, float, float, float, XMVECTOR, XMVECTOR);
 	float LookAt(XMVECTOR, XMVECTOR, XMVECTOR, float);
+	float LookAt(XMFLOAT3, XMVECTOR, XMVECTOR, XMVECTOR);
+
+	typedef struct EnemyCoastGuard {
+		XMFLOAT3 position;
+		int health = 3;
+		bool isDestroyed = false;
+		bool isHit = false;
+		XMVECTOR DefaultForward = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+		XMVECTOR DefaultRight = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	}EnemyCoastGuard;
+
+	typedef struct EnemyShip {
+		XMFLOAT3 position;
+		int health = 3;
+		bool isDestroyed = false;
+		bool isHit = false;
+	}EnemyShip;
 
 private:
 	int flagNum = 4;
@@ -169,7 +184,6 @@ private:
 	CameraClass* m_Camera;
 
 	SkymapClass* m_SkyMap;
-
 	ModelClass* m_Sea;
 	ModelClass* m_Seafloor;
 	ModelClass* m_Player;
@@ -311,6 +325,7 @@ private:
 	int num_turret = 0;
 
 	///////////////////////////////////////////////////////////////
+
 	XMMATRIX worldMatrix_skymap;
 	XMMATRIX transMatrix_skymap;
 	XMMATRIX scaleMatrix_skymap;
@@ -347,6 +362,8 @@ private:
 	XMMATRIX rotateMatrix_lHouse[3];
 	int num_iHouse = 0;
 
+	EnemyShip convoyInfo[3];
+
 	XMMATRIX worldMatrix_convoy[3];
 	XMMATRIX scaleMatrix_convoy = XMMatrixScaling(2.2f, 2.2f, 2.2f);
 	XMMATRIX transMatrix_convoy[3];
@@ -358,6 +375,8 @@ private:
 	XMMATRIX transMatrix_coastGuardBase[3];
 	XMMATRIX rotateMatrix_coastGuardBase[3];
 	int num_coastGuardBase = 0;
+
+	EnemyCoastGuard coastCannonInfo[3];
 
 	XMMATRIX worldMatrix_coastGuardCannon[3];
 	XMMATRIX scaleMatrix_coastGuardCannon = XMMatrixScaling(2.2f, 2.2f, 2.2f);
