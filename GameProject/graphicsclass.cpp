@@ -1403,8 +1403,20 @@ bool GraphicsClass::Frame(int fps, int cpu, float frameTime, int mouseX, int mou
 	m_waterTranslation += 0.0001f * m_fps_Calculate;
 	if (m_waterTranslation > 1.0f) m_waterTranslation -= 1.0f;
 
-	if (m_time < 210) {
-		if (wayPointNum == 1) {
+	int destroyedShip = 0;
+	int destroyedGun = 0;
+	for (int i = 0; i < 3; i++) {
+		if (convoyInfo[i].isDestroyed == true) {
+			destroyedShip++;
+		}
+
+		if (coastCannonInfo[i].isDestroyed == true) {
+			destroyedGun++;
+		}
+	}
+
+	if (m_time < 300) {
+		if ((wayPointNum == 1) && (EnemyShipNum == destroyedShip) && (EnemyCoastGuardGun == destroyedGun)) {
 			clear = true;
 		}
 		fail = false;
@@ -1427,6 +1439,8 @@ bool GraphicsClass::Frame(int fps, int cpu, float frameTime, int mouseX, int mou
 	result = m_Text->SetQuestState(clear, fail, m_D3D->GetDeviceContext());
 	result = m_Text->SetFlagsState(flagNum, fail, m_D3D->GetDeviceContext());
 	result = m_Text->SetContainersState(containerNum, fail, m_D3D->GetDeviceContext());
+	result = m_Text->SetEnemyShipsState(EnemyShipNum - destroyedShip, fail, m_D3D->GetDeviceContext());
+	result = m_Text->SetEnemyCoastGunsState(EnemyCoastGuardGun - destroyedGun, fail, m_D3D->GetDeviceContext());
 	result = m_Text->SetResultState(clear, fail, m_D3D->GetDeviceContext());
 	result = m_Text->SetReloadState(reloadTime, m_D3D->GetDeviceContext());
 
@@ -1934,7 +1948,13 @@ void GraphicsClass::RestartScene() {
 		coastCannonInfo[i].isDestroyed = false;
 		coastCannonInfo[i].health = 3;
 		coastCannonInfo[i].isHit = false;
+
+		coastCannonInfo[i].DefaultForward = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+		coastCannonInfo[i].DefaultRight = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 	}
+
+	EnemyShipNum = 3;
+	EnemyCoastGuardGun = 3;
 }
 
 bool GraphicsClass::Render()

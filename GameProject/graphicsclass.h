@@ -153,6 +153,8 @@ private:
 private:
 	int flagNum = 4;
 	int containerNum = 3;
+	int EnemyShipNum = 3;
+	int EnemyCoastGuardGun = 3;
 
 	int wayPointNum = 8;
 	float transFlagX[8] = { FAR_AWAY,  65.0f, FAR_AWAY, -70.0f,  -200.0f, FAR_AWAY, -220.0f, FAR_AWAY };
