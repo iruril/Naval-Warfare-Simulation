@@ -64,6 +64,8 @@ public:
 	void Shutdown();
 	bool Frame(int, int, float, int, int, float, int);
 
+	bool isFreeLookMode = false;
+
 	bool shooting = false;
 	bool isAimed = false;
 	int reloadTime = 0;
@@ -86,6 +88,10 @@ public:
 
 	float moveLeftRight = 0.0f;
 	float moveBackForward = 0.0f;
+
+	float CAMmoveLeftRight = 0.0f;
+	float CAMmoveBackForward = 0.0f;
+
 	int currentSpeedState = 0;
 
 	float camRotateInfoYaw = 0.0f;

@@ -1579,8 +1579,14 @@ void GraphicsClass::SetPosition() {
 	}
 
 	for (int i = 0; i < 3; i++) {
-		worldMatrix_Bullet[i] = m_Bullet[i]->ProjectileShoot(playerPosition + Vector_Turret[i]
-			, camYaw, camPitch);
+		if (!isFreeLookMode) {
+			worldMatrix_Bullet[i] = m_Bullet[i]->ProjectileShoot(playerPosition + Vector_Turret[i]
+				, camYaw, camPitch);
+		}
+		else {
+			worldMatrix_Bullet[i] = m_Bullet[i]->ProjectileShoot(playerPosition + Vector_Turret[i]
+				, camYaw, 0);
+		}
 		m_Bullet[i]->SetCollider();
 	}
 
@@ -1845,6 +1851,8 @@ void GraphicsClass::SetPosition() {
 }
 
 void GraphicsClass::RestartScene() {
+	isFreeLookMode = false;
+
 	collisionFront = false;
 	collisionBack = false;
 	frameTime = 0.0f;
@@ -2338,10 +2346,16 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 	// Clear the reflection render to texture.
 	m_ReflectionTexture->ClearRenderTarget(m_D3D->GetDeviceContext(), m_D3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Use the camera to render the reflection and create a reflection view matrix.
-	m_Camera->RenderReflection(camYaw, camPitch, moveLeftRight, moveBackForward, CamDefaultForward, CamDefaultRight,
-		                       playerPosition4Cam, charCamDist, charCamHeight, m_waterHeight);
-	CamLookDir = m_Camera->GetLookDir();
+	if (!isFreeLookMode) {
+		// Use the camera to render the reflection and create a reflection view matrix.
+		m_Camera->RenderReflection(camYaw, camPitch, moveLeftRight, moveBackForward, CamDefaultForward, CamDefaultRight,
+			playerPosition4Cam, charCamDist, charCamHeight, m_waterHeight);
+	}
+	else {
+		m_Camera->RenderFreeLookCamReflection(camYaw, camPitch, CAMmoveLeftRight, CAMmoveBackForward, CamDefaultForward,
+			CamDefaultRight, m_waterHeight, CamHeight);
+	}
+	
 	// Get the camera reflection view matrix instead of the normal view matrix.
 	m_Camera->GetReflectionViewMatrix(reflectionViewMatrix);
 
@@ -2457,34 +2471,26 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 
 	static float fireTime = 0.0f;
 
-
-	// 프레임 시간 카운터를 증가시킵니다.
 	fireTime += 0.01f;
 	if (fireTime > 1000.0f)
 	{
 		fireTime = 0.0f;
 	}
 
-	// 세 가지 다른 노이즈 텍스처에 대해 세 가지 스크롤 속도를 설정합니다.
 	XMFLOAT3 scrollSpeeds = XMFLOAT3(1.3f, 2.1f, 2.3f);
 
-	// 세 개의 서로 다른 노이즈 옥타브 텍스처를 만드는 데 사용할 세 개의 스케일을 설정합니다.
 	XMFLOAT3 scales = XMFLOAT3(2.0f, 3.0f, 4.0f);
 
-	// 세 가지 다른 노이즈 텍스처에 대해 세 가지 다른 x 및 y 왜곡 인수를 설정합니다.
 	XMFLOAT2 distortion1 = XMFLOAT2(0.1f, 0.2f);
 	XMFLOAT2 distortion2 = XMFLOAT2(0.1f, 0.3f);
 	XMFLOAT2 distortion3 = XMFLOAT2(0.1f, 0.1f);
 
-	// 텍스처 좌표 샘플링 섭동의 스케일과 바이어스.
 	float distortionScale = 2.5f;
 	float distortionBias = 1.5f;
 
-	// 정사각형 모델의 정점과 인덱스 버퍼를 그래픽 파이프 라인에 배치하여 그리기를 준비합니다.
 	for (int i = 0; i < 3; i++) {
 		m_Fire[i]->Render(m_D3D->GetDeviceContext());
 		if (coastCannonInfo[i].isDestroyed) {
-			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_Fire[i]->GetIndexCount(), worldMatrix_fire[i], reflectionViewMatrix, projectionMatrix,
 				m_Fire[i]->GetTexture1(), m_Fire[i]->GetTexture2(), m_Fire[i]->GetTexture3(), fireTime, scrollSpeeds,
 				scales, distortion1, distortion2, distortion3, distortionScale, distortionBias))
@@ -2495,7 +2501,6 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 
 		m_convoyFire[i]->Render(m_D3D->GetDeviceContext());
 		if (convoyInfo[i].isDestroyed) {
-			// 화재 쉐이더를 사용하여 사각형 모델을 렌더링합니다.
 			if (!m_FireShader->Render(m_D3D->GetDeviceContext(), m_convoyFire[i]->GetIndexCount(), worldMatrix_convoyfire[i], reflectionViewMatrix, projectionMatrix,
 				m_convoyFire[i]->GetTexture1(), m_convoyFire[i]->GetTexture2(), m_convoyFire[i]->GetTexture3(), fireTime, scrollSpeeds,
 				scales, distortion1, distortion2, distortion3, distortionScale, distortionBias))
@@ -2550,7 +2555,6 @@ bool GraphicsClass::RenderTutorialGameReflectionToTexture()
 	m_D3D->TurnZBufferOn();
 	m_D3D->TurnOffAlphaBlending();
 
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	m_D3D->SetBackBufferRenderTarget();
 
 	return true;
@@ -2567,8 +2571,14 @@ bool GraphicsClass::RenderTutorialGameScene()
 
 	playerPosition4Cam = playerPosition;
 	playerPosition4Cam = XMVectorSetY(playerPosition4Cam, 0.0f);
-	// Generate the view matrix based on the camera's position.
-	m_Camera->Render(camYaw, camPitch, moveLeftRight, moveBackForward, CamDefaultForward, CamDefaultRight, playerPosition4Cam, charCamDist, charCamHeight);
+
+	if (!isFreeLookMode) {
+		// Generate the view matrix based on the camera's position.
+		m_Camera->Render(camYaw, camPitch, moveLeftRight, moveBackForward, CamDefaultForward, CamDefaultRight, playerPosition4Cam, charCamDist, charCamHeight);
+	}
+	else {
+		m_Camera->RenderFreeLookCam(camYaw, camPitch, CAMmoveLeftRight, CAMmoveBackForward, CamDefaultForward, CamDefaultRight);
+	}
 	CamLookDir = m_Camera->GetLookDir();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
@@ -2927,182 +2937,184 @@ bool GraphicsClass::RenderTutorialGameScene()
 	////////////////////////////////////////////////////////////////////////////////
 // UI 배치 시작하는 부분.
 ////////////////////////////////////////////////////////////////////////////////
+	if (!isFreeLookMode) {
 
-	if (isMenuPressed || isRetryMenuPressed) {
-		if (isMenuPressed) {
-			m_inGameMenu->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
+		if (isMenuPressed || isRetryMenuPressed) {
+			if (isMenuPressed) {
+				m_inGameMenu->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
 
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_inGameMenu->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_inGameMenu->GetTexture());
-		}
-		if (isRetryMenuPressed) {
-			m_RetrytMenu->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_inGameMenu->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_inGameMenu->GetTexture());
+			}
+			if (isRetryMenuPressed) {
+				m_RetrytMenu->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
 
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_RetrytMenu->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_RetrytMenu->GetTexture());
-		}
-	}
-
-	else {
-		if (clear == true) {
-			m_Clear->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
-
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Clear->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_Clear->GetTexture());
-		}
-		if (fail == true) {
-			m_Fail->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
-
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Fail->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_Fail->GetTexture());
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_RetrytMenu->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_RetrytMenu->GetTexture());
+			}
 		}
 
-		XMFLOAT4 clipPlane = XMFLOAT4(0.0f, 0.1f, 0.0f, 0.0f);
+		else {
+			if (clear == true) {
+				m_Clear->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
 
-		if (collisionWithContainer) {
-			m_PressSpace->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 150, (screenheight / 2) - 300);
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Clear->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_Clear->GetTexture());
+			}
+			if (fail == true) {
+				m_Fail->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 200, (screenheight / 2) - 300);
 
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_PressSpace->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_PressSpace->GetTexture());
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Fail->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_Fail->GetTexture());
+			}
 
-			m_HoldBar->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) + (screenwidth / 4), (screenheight / 2) - 40 - 500 * (spacePressTime / 5.0f));
+			XMFLOAT4 clipPlane = XMFLOAT4(0.0f, 0.1f, 0.0f, 0.0f);
 
-			m_ClipPlaneShaderClass->Render(m_D3D->GetDeviceContext(), m_HoldBar->GetIndexCount(), worldMatrix_Gage,
-				viewMatrix, orthoMatrix, m_HoldBar->GetTexture(), clipPlane);
+			if (collisionWithContainer) {
+				m_PressSpace->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 150, (screenheight / 2) - 300);
 
-			m_HoldBarFrame->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) + (screenwidth / 4), (screenheight / 2) - 335);
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_PressSpace->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_PressSpace->GetTexture());
 
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_HoldBarFrame->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_HoldBarFrame->GetTexture());
+				m_HoldBar->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) + (screenwidth / 4), (screenheight / 2) - 40 - 500 * (spacePressTime / 5.0f));
+
+				m_ClipPlaneShaderClass->Render(m_D3D->GetDeviceContext(), m_HoldBar->GetIndexCount(), worldMatrix_Gage,
+					viewMatrix, orthoMatrix, m_HoldBar->GetTexture(), clipPlane);
+
+				m_HoldBarFrame->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) + (screenwidth / 4), (screenheight / 2) - 335);
+
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_HoldBarFrame->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_HoldBarFrame->GetTexture());
+			}
+
+			if (collisionFront || isBoundary || collisionBack) {
+				m_CollisionWarning->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 100, (screenheight / 2) - 300);
+
+				m_TextureShader->Render(m_D3D->GetDeviceContext(), m_CollisionWarning->GetIndexCount(), worldMatrix_UIBG,
+					viewMatrix, orthoMatrix, m_CollisionWarning->GetTexture());
+			}
 		}
 
-		if (collisionFront || isBoundary || collisionBack) {
-			m_CollisionWarning->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 100, (screenheight / 2) - 300);
+		if (isAimed) {
+			result = m_Crosshair_Aimed_Arm->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.1) / 2) - aimedArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
 
-			m_TextureShader->Render(m_D3D->GetDeviceContext(), m_CollisionWarning->GetIndexCount(), worldMatrix_UIBG,
-				viewMatrix, orthoMatrix, m_CollisionWarning->GetTexture());
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed_Arm->GetIndexCount(), worldMatrix_CHA_arm[0],
+				viewMatrix, orthoMatrix, m_Crosshair_Aimed_Arm->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
+
+			result = m_Crosshair_Aimed_Arm->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.1) / 2) + aimedArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
+
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed_Arm->GetIndexCount(), worldMatrix_CHA_arm[1],
+				viewMatrix, orthoMatrix, m_Crosshair_Aimed_Arm->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
+
+			result = m_Crosshair_Aimed->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.006) / 2), (screenheight / 2) - ((screenwidth * 0.006) / 2));
+			if (!result)
+			{
+				return false;
+			}
+
+			// Render the bitmap with the texture shader.
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed->GetIndexCount(), worldMatrix_CHA,
+				viewMatrix, orthoMatrix, m_Crosshair_Aimed->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
 		}
-	}
 
-	if (isAimed) {
-		result = m_Crosshair_Aimed_Arm->Render(m_D3D->GetDeviceContext(),
-			(screenwidth / 2) - ((screenwidth * 0.1) / 2) - aimedArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
+		else {
+			// Put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing.
 
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed_Arm->GetIndexCount(), worldMatrix_CHA_arm[0],
-			viewMatrix, orthoMatrix, m_Crosshair_Aimed_Arm->GetTexture());
+			result = m_Crosshair_Arm->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.1) / 2) - ArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
+
+			// Render the bitmap with the texture shader.
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Arm->GetIndexCount(), worldMatrix_CH_arm[0],
+				viewMatrix, orthoMatrix, m_Crosshair_Arm->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
+
+			result = m_Crosshair_Arm->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.1) / 2) + ArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
+
+			// Render the bitmap with the texture shader.
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Arm->GetIndexCount(), worldMatrix_CH_arm[1],
+				viewMatrix, orthoMatrix, m_Crosshair_Arm->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
+
+			// Put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing.
+			result = m_Crosshair->Render(m_D3D->GetDeviceContext(),
+				(screenwidth / 2) - ((screenwidth * 0.006) / 2), (screenheight / 2) - ((screenwidth * 0.006) / 2));
+			if (!result)
+			{
+				return false;
+			}
+
+			// Render the bitmap with the texture shader.
+			result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair->GetIndexCount(), worldMatrix_CH,
+				viewMatrix, orthoMatrix, m_Crosshair->GetTexture());
+			if (!result)
+			{
+				return false;
+			}
+		}
+
+		m_UIBG->Render(m_D3D->GetDeviceContext(), 10.0f, 10.0f);
+
+		m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_UIBG->GetTexture());
+
+		m_UIBG->Render(m_D3D->GetDeviceContext(), screenwidth - 220.0f, 10.0f);
+
+		m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_UIBG->GetTexture());
+
+		m_UIBG2->Render(m_D3D->GetDeviceContext(), 10.0f, screenheight - 220.0f);
+
+		m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG2->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_UIBG2->GetTexture());
+
+		m_shipUI->Render(m_D3D->GetDeviceContext(), 0.0f, 0.0f);
+
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_shipUI->GetIndexCount(), worldMatrix_shipUI,
+			viewMatrix, orthoMatrix, m_shipUI->GetTexture());
+
+		m_turnArrowUI->Render(m_D3D->GetDeviceContext(), 0.0f, 0.0f);
+
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_turnArrowUI->GetIndexCount(), worldMatrix_TurnBar,
+			viewMatrix, orthoMatrix, m_turnArrowUI->GetTexture());
+
+		m_turnUI->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 250, screenheight - 265);
+
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_turnUI->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_turnUI->GetTexture());
+
+		m_SNUI->Render(m_D3D->GetDeviceContext(), 18.0f, screenheight - 210.0f);
+
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_SNUI->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_SNUI->GetTexture());
+
+		// 텍스트 출력부분
+		result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix_Text, orthoMatrix);
 		if (!result)
 		{
 			return false;
 		}
-
-		result = m_Crosshair_Aimed_Arm->Render(m_D3D->GetDeviceContext(),
-			(screenwidth / 2) - ((screenwidth * 0.1) / 2) + aimedArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
-
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed_Arm->GetIndexCount(), worldMatrix_CHA_arm[1],
-			viewMatrix, orthoMatrix, m_Crosshair_Aimed_Arm->GetTexture());
-		if (!result)
-		{
-			return false;
-		}
-
-		result = m_Crosshair_Aimed->Render(m_D3D->GetDeviceContext(), 
-			(screenwidth / 2) - ((screenwidth * 0.006)/2), (screenheight / 2) - ((screenwidth * 0.006) / 2));
-		if (!result)
-		{
-			return false;
-		}
-
-		// Render the bitmap with the texture shader.
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Aimed->GetIndexCount(), worldMatrix_CHA,
-			viewMatrix, orthoMatrix, m_Crosshair_Aimed->GetTexture());
-		if (!result)
-		{
-			return false;
-		}
-	}
-
-	else {
-		// Put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing.
-
-		result = m_Crosshair_Arm->Render(m_D3D->GetDeviceContext(),
-			(screenwidth / 2) - ((screenwidth * 0.1) / 2) - ArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
-
-		// Render the bitmap with the texture shader.
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Arm->GetIndexCount(), worldMatrix_CH_arm[0],
-			viewMatrix, orthoMatrix, m_Crosshair_Arm->GetTexture());
-		if (!result)
-		{
-			return false;
-		}
-
-		result = m_Crosshair_Arm->Render(m_D3D->GetDeviceContext(),
-			(screenwidth / 2) - ((screenwidth * 0.1) / 2) + ArmDis, (screenheight / 2) - ((screenwidth * 0.002) / 2));
-
-		// Render the bitmap with the texture shader.
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair_Arm->GetIndexCount(), worldMatrix_CH_arm[1],
-			viewMatrix, orthoMatrix, m_Crosshair_Arm->GetTexture());
-		if (!result)
-		{
-			return false;
-		}
-
-		// Put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing.
-		result = m_Crosshair->Render(m_D3D->GetDeviceContext(), 
-			(screenwidth / 2) - ((screenwidth * 0.006) / 2), (screenheight / 2) - ((screenwidth * 0.006) / 2));
-		if (!result)
-		{
-			return false;
-		}
-
-		// Render the bitmap with the texture shader.
-		result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Crosshair->GetIndexCount(), worldMatrix_CH,
-			viewMatrix, orthoMatrix, m_Crosshair->GetTexture());
-		if (!result)
-		{
-			return false;
-		}
-	}
-
-	m_UIBG->Render(m_D3D->GetDeviceContext(), 10.0f, 10.0f);
-
-	m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_UIBG->GetTexture());
-
-	m_UIBG->Render(m_D3D->GetDeviceContext(), screenwidth - 220.0f, 10.0f);
-
-	m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_UIBG->GetTexture());
-
-	m_UIBG2->Render(m_D3D->GetDeviceContext(), 10.0f, screenheight - 220.0f);
-
-	m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBG2->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_UIBG2->GetTexture());
-
-	m_shipUI->Render(m_D3D->GetDeviceContext(), 0.0f, 0.0f);
-
-	m_TextureShader->Render(m_D3D->GetDeviceContext(), m_shipUI->GetIndexCount(), worldMatrix_shipUI,
-		viewMatrix, orthoMatrix, m_shipUI->GetTexture());
-
-	m_turnArrowUI->Render(m_D3D->GetDeviceContext(), 0.0f, 0.0f);
-
-	m_TextureShader->Render(m_D3D->GetDeviceContext(), m_turnArrowUI->GetIndexCount(), worldMatrix_TurnBar,
-		viewMatrix, orthoMatrix, m_turnArrowUI->GetTexture());
-
-	m_turnUI->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - 250, screenheight - 265);
-
-	m_TextureShader->Render(m_D3D->GetDeviceContext(), m_turnUI->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_turnUI->GetTexture());
-
-	m_SNUI->Render(m_D3D->GetDeviceContext(), 18.0f, screenheight - 210.0f);
-
-	m_TextureShader->Render(m_D3D->GetDeviceContext(), m_SNUI->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_SNUI->GetTexture());
-
-	// 텍스트 출력부분
-	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix_Text, orthoMatrix);
-	if (!result)
-	{
-		return false;
 	}
 
 	m_D3D->TurnOffAlphaBlending();
