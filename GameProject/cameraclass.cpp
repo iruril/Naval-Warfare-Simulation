@@ -148,6 +148,48 @@ void CameraClass::RenderReflection(float camYaw, float camPitch, float moveLeftR
 	return;
 }
 
+void CameraClass::RenderFreeLookCam(float camYaw, float camPitch, float moveLeftRight, float moveBackForward,
+	XMVECTOR DefaultForward, XMVECTOR DefalutRight) {
+	XMMATRIX camRotationMatrix;
+
+	camRotationMatrix = XMMatrixRotationRollPitchYaw(-camPitch, camYaw, 0);
+	camTarget = XMVector3TransformCoord(-DefaultForward, camRotationMatrix);
+	camTarget = XMVector3Normalize(camTarget);
+
+	camRight = XMVector3TransformCoord(-DefalutRight, camRotationMatrix);
+	camForward = XMVector3TransformCoord(-DefaultForward, camRotationMatrix);
+	camUp = XMVector3Cross(camForward, camRight);
+
+	camPosition += moveLeftRight * camRight;
+	camPosition += moveBackForward * camForward;
+
+	camTarget = camPosition + camTarget;
+
+	m_viewMatrix = XMMatrixLookAtLH(camPosition, camTarget, camUp);
+}
+
+void CameraClass::RenderFreeLookCamReflection(float camYaw, float camPitch, float moveLeftRight, float moveBackForward,
+	XMVECTOR DefaultForward, XMVECTOR DefalutRight, float height, float camHeight) {
+
+	XMMATRIX camRotationMatrix;
+
+	camRotationMatrix = XMMatrixRotationRollPitchYaw(+camPitch, camYaw, 0);
+	r_camTarget = XMVector3TransformCoord(-DefaultForward, camRotationMatrix);
+
+	r_camTarget = XMVector3Normalize(r_camTarget);
+
+	r_camRight = XMVector3TransformCoord(-DefalutRight, camRotationMatrix);
+	r_camForward = XMVector3TransformCoord(-DefaultForward, camRotationMatrix);
+	r_camUp = XMVector3Cross(r_camForward, r_camRight);
+
+	r_camPosition += moveLeftRight * r_camRight; 
+	r_camPosition += moveBackForward * r_camForward;
+
+	r_camTarget = r_camPosition + r_camTarget;
+
+	m_reflectionViewMatrix = XMMatrixLookAtLH(r_camPosition, r_camTarget, r_camUp);
+}
+
 
 void CameraClass::GetReflectionViewMatrix(XMMATRIX& m_rViewMatrix)
 {

@@ -79,7 +79,9 @@ private:
 	bool onceKeyDowned = false;
 	bool isSpacePressed = false;
 	bool isRPressed = false;
+	bool isCPressed = false;
 	bool isESCPressed = false;
+	bool isFreeLookCam = false;
 
 	bool mouseClicked = false;
 	bool isFired = false;
@@ -104,6 +106,7 @@ private:
 
 	int pitch = 0; // -1 ~ 3
 	float speed = 0.0f;
+	float speed4FreeLook = 0.9f;
 	float speedGap = 0.05f;
 	float speedAccel = 0.0002f;
 	int m_fps = 1;
