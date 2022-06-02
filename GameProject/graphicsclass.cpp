@@ -64,7 +64,8 @@ GraphicsClass::GraphicsClass()
 	m_Fail = 0;
 	m_Menu = 0;
 	m_UIBGforTitle = 0;
-	m_ResultScene = 0;
+	m_SuccessResultScene = 0;
+	m_FailResultScene = 0;
 	m_MainTitle = 0;
 	m_inGameMenu = 0;
 	m_RetrytMenu = 0;
@@ -780,14 +781,28 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	m_ResultScene = new BitmapClass;
-	if (!m_ResultScene)
+	m_SuccessResultScene = new BitmapClass;
+	if (!m_SuccessResultScene)
 	{
 		return false;
 	}
 
 	// Initialize the bitmap object.
-	result = m_ResultScene->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"./data/textures/ResultScene.dds", screenHeight * 1.25f, screenHeight);
+	result = m_SuccessResultScene->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"./data/textures/SuccessResultScene.dds", screenWidth, screenWidth*0.5625f);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bitmap object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_FailResultScene = new BitmapClass;
+	if (!m_FailResultScene)
+	{
+		return false;
+	}
+
+	// Initialize the bitmap object.
+	result = m_FailResultScene->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"./data/textures/FailResultScene.dds", screenWidth, screenWidth * 0.5625f);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the bitmap object.", L"Error", MB_OK);
@@ -801,7 +816,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the bitmap object.
-	result = m_MainTitle->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"./data/textures/MainTitle.dds", screenHeight * 1.25f, screenHeight);
+	result = m_MainTitle->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"./data/textures/MainTitle.dds", screenWidth, screenWidth * 0.5625f);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the bitmap object.", L"Error", MB_OK);
@@ -1355,11 +1370,18 @@ void GraphicsClass::Shutdown()
 		m_UIBGforTitle = 0;
 	}
 
-	if (m_ResultScene)
+	if (m_SuccessResultScene)
 	{
-		m_ResultScene->Shutdown();
-		delete m_ResultScene;
-		m_ResultScene = 0;
+		m_SuccessResultScene->Shutdown();
+		delete m_SuccessResultScene;
+		m_SuccessResultScene = 0;
+	}
+
+	if (m_FailResultScene)
+	{
+		m_FailResultScene->Shutdown();
+		delete m_FailResultScene;
+		m_FailResultScene = 0;
 	}
 
 	if (m_MainTitle)
@@ -2022,7 +2044,7 @@ bool GraphicsClass::RenderMainTitleScene()
 	}
 	else {
 
-		m_MainTitle->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - ((screenheight * 1.25f) / 2), 0);
+		m_MainTitle->Render(m_D3D->GetDeviceContext(), (screenheight / 2) - (screenwidth * 0.5625f / 2), 0);
 
 		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_MainTitle->GetIndexCount(), worldMatrix_UIBG,
 			viewMatrix, orthoMatrix, m_MainTitle->GetTexture());
@@ -2042,7 +2064,7 @@ bool GraphicsClass::RenderResultScene()
 {
 	bool result;
 	/// <summary>
-	/// 결과창, 성공/실패여부, 성공했다면 클리어 시간 출력. 무조건 메인타이틀로 돌아감.
+	/// 결과창, 성공/실패여부. 무조건 메인타이틀로 돌아감.
 	/// </summary>
 	/// <returns></returns>
 
@@ -2065,14 +2087,20 @@ bool GraphicsClass::RenderResultScene()
 
 	m_TextureBlendShader->Render(m_D3D->GetDeviceContext(), m_UIBGforTitle->GetIndexCount(), worldMatrix_UIBG,
 		viewMatrix, orthoMatrix, m_UIBGforTitle->GetTexture());
+	if (fail) {
+		m_FailResultScene->Render(m_D3D->GetDeviceContext(), (screenheight / 2) - (screenwidth * 0.5625f / 2), 0);
 
-	m_ResultScene->Render(m_D3D->GetDeviceContext(), (screenwidth / 2) - ((screenheight * 1.25f) / 2), 0);
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_FailResultScene->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_FailResultScene->GetTexture());
+	}
+	if (clear) {
+		m_SuccessResultScene->Render(m_D3D->GetDeviceContext(), (screenheight / 2) - (screenwidth * 0.5625f / 2), 0);
 
-	m_TextureShader->Render(m_D3D->GetDeviceContext(), m_ResultScene->GetIndexCount(), worldMatrix_UIBG,
-		viewMatrix, orthoMatrix, m_ResultScene->GetTexture());
-
+		m_TextureShader->Render(m_D3D->GetDeviceContext(), m_SuccessResultScene->GetIndexCount(), worldMatrix_UIBG,
+			viewMatrix, orthoMatrix, m_SuccessResultScene->GetTexture());
+	}
 	// 텍스트 출력부분
-	result = m_Text->RenderResult(m_D3D->GetDeviceContext(), worldMatrix_Text, orthoMatrix);
+	//result = m_Text->RenderResult(m_D3D->GetDeviceContext(), worldMatrix_Text, orthoMatrix);
 
 	m_D3D->TurnZBufferOn();
 	m_D3D->TurnOffAlphaBlending();

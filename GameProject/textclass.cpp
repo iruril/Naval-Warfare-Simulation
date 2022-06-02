@@ -294,34 +294,6 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	}
 
 	// Initialize the first sentence.
-	result = InitializeSentence(&m_EnemyShips, 16, device);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Now update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_EnemyShips, (CHAR*)" ", 100, 200, 1.0f, 1.0f, 0.0f, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Initialize the first sentence.
-	result = InitializeSentence(&m_CoastGuardGuns, 16, device);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Now update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_CoastGuardGuns, (CHAR*)" ", 100, 200, 1.0f, 1.0f, 0.0f, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Initialize the first sentence.
 	result = InitializeSentence(&m_result, 16, device);
 	if (!result)
 	{
@@ -377,8 +349,6 @@ void TextClass::Shutdown()
 	ReleaseSentence(&m_Quests);
 	ReleaseSentence(&m_Flags);
 	ReleaseSentence(&m_Containers);
-	ReleaseSentence(&m_EnemyShips);
-	ReleaseSentence(&m_CoastGuardGuns);
 
 	ReleaseSentence(&m_result);
 
@@ -495,18 +465,6 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix,
 	}
 
 	result = RenderSentence(deviceContext, m_Containers, worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		return false;
-	}
-
-	result = RenderSentence(deviceContext, m_EnemyShips, worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		return false;
-	}
-
-	result = RenderSentence(deviceContext, m_CoastGuardGuns, worldMatrix, orthoMatrix);
 	if (!result)
 	{
 		return false;
@@ -781,7 +739,7 @@ bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext* de
 	strcat_s(mouseString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence1, mouseString, 20, 160, 0, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_sentence1, mouseString, 20, 220, 0, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -795,7 +753,7 @@ bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext* de
 	strcat_s(mouseString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence2, mouseString, 20, 180, 0, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_sentence2, mouseString, 20, 240, 0, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -958,7 +916,7 @@ bool TextClass::SetTime(float time, ID3D11DeviceContext* deviceContext)
 	strcat_s(timeString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_time, timeString, 20, 60, r, g, b, deviceContext);
+	result = UpdateSentence(m_time, timeString, 20, 140, r, g, b, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -1007,14 +965,13 @@ bool TextClass::SetScreenWidth(ID3D11DeviceContext* deviceContext)
 	strcat_s(screenString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_screenWidthTxt, screenString, 20, 100, 0.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_screenWidthTxt, screenString, 20, 160, 0.0f, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
 	}
 	return true;
 }
-
 bool TextClass::SetScreenHeight(ID3D11DeviceContext* deviceContext)
 {
 	char tempString[16];
@@ -1030,7 +987,7 @@ bool TextClass::SetScreenHeight(ID3D11DeviceContext* deviceContext)
 	strcat_s(screenString, tempString);
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_screenHeightTxt, screenString, 20, 120, 0.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_screenHeightTxt, screenString, 20, 180, 0.0f, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -1291,100 +1248,6 @@ bool TextClass::SetContainersState(int numContainers, bool fail, ID3D11DeviceCon
 	// Update the sentence vertex buffer with the new string information.
 	result = UpdateSentence(m_Containers, boxString,
 		m_screenWidth - 200, 60, r, g, b, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool TextClass::SetEnemyShipsState(int numShips, bool fail, ID3D11DeviceContext* deviceContext)
-{
-	char tempString[16];
-	char flagString[16];
-	float r = 0, g = 1.0f, b = 1.0f;
-	bool result;
-
-	_itoa_s(3 - numShips, tempString, 10);
-	if (!fail) {
-		if (3 - numShips == 3) {
-			r = 0.0f;
-			g = 1.0f;
-			b = 0.0f;
-		}
-		else if (3 - numShips > 1) {
-			r = 1.0f;
-			g = 1.0f;
-			b = 0.0f;
-		}
-		else {
-			r = 0.0f;
-			g = 1.0f;
-			b = 1.0f;
-		}
-	}
-	else {
-		r = 1.0f;
-		g = 0.0f;
-		b = 0.0f;
-	}
-
-	// Setup the cpu string.
-	strcpy_s(flagString, "- Ships (");
-	strcat_s(flagString, tempString);
-	strcat_s(flagString, "/3)");
-
-	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_EnemyShips, flagString,
-		m_screenWidth - 200, 80, r, g, b, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool TextClass::SetEnemyCoastGunsState(int numCoastGuardGun, bool fail, ID3D11DeviceContext* deviceContext)
-{
-	char tempString[16];
-	char boxString[16];
-	float r = 0, g = 1.0f, b = 1.0f;
-	bool result;
-
-	_itoa_s(3 - numCoastGuardGun, tempString, 10);
-	if (!fail) {
-		if (3 - numCoastGuardGun == 3) {
-			r = 0.0f;
-			g = 1.0f;
-			b = 0.0f;
-		}
-		else if (3 - numCoastGuardGun > 1) {
-			r = 1.0f;
-			g = 1.0f;
-			b = 0.0f;
-		}
-		else {
-			r = 0.0f;
-			g = 1.0f;
-			b = 1.0f;
-		}
-	}
-	else {
-		r = 1.0f;
-		g = 0.0f;
-		b = 0.0f;
-	}
-
-	// Setup the cpu string.
-	strcpy_s(boxString, "- Guns (");
-	strcat_s(boxString, tempString);
-	strcat_s(boxString, "/3)");
-
-	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_CoastGuardGuns, boxString,
-		m_screenWidth - 200, 100, r, g, b, deviceContext);
 	if (!result)
 	{
 		return false;

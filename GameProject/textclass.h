@@ -57,10 +57,6 @@ public:
 	bool SetQuestState(bool, bool, ID3D11DeviceContext*);
 	bool SetFlagsState(int, bool, ID3D11DeviceContext*);
 	bool SetContainersState(int, bool, ID3D11DeviceContext*);
-
-	bool SetEnemyShipsState(int, bool, ID3D11DeviceContext*);
-	bool SetEnemyCoastGunsState(int, bool, ID3D11DeviceContext*);
-
 	bool SetReloadState(int, ID3D11DeviceContext*);
 
 	bool SetResultState(bool, bool, ID3D11DeviceContext*);
@@ -96,10 +92,6 @@ private:
 	SentenceType* m_Quests;
 	SentenceType* m_Flags;
 	SentenceType* m_Containers;
-
-	SentenceType* m_EnemyShips;
-	SentenceType* m_CoastGuardGuns;
-
 	SentenceType* m_reload;
 
 	SentenceType* m_result;

@@ -647,22 +647,6 @@ void SystemClass::DetectInput()
 			}
 		}
 
-		if ((keyboardState[DIK_C] & 0X80) && isFreeLookCam == false && isCPressed == false) {
-			isCPressed = true;
-			isFreeLookCam = true;
-			m_Graphics->isFreeLookMode = true;
-		}
-
-		if ((keyboardState[DIK_C] & 0X80) && isFreeLookCam == true && isCPressed == false) {
-			isCPressed = true;
-			isFreeLookCam = false;
-			m_Graphics->isFreeLookMode = false;
-		}
-
-		if (!(keyboardState[DIK_C] & 0X80)) {
-			isCPressed = false;
-		}
-
 		currTimeforFire = m_Graphics->m_time;
 		m_Graphics->reloadTime = (int)(currTimeforFire - lastTimeforFire);
 
@@ -692,240 +676,203 @@ void SystemClass::DetectInput()
 			mouseClicked = false;
 		}
 
-		if (!isFreeLookCam) {
-			if (!(keyboardState[DIK_D] & 0x80) && !(keyboardState[DIK_A] & 0x80)) {
-				if (m_Graphics->playerRoll > 0)
-					m_Graphics->playerRoll -= 0.0005f;
-				if (m_Graphics->playerRoll < 0)
-					m_Graphics->playerRoll += 0.0005f;
-				if (m_Graphics->playerRoll == 0)
-					m_Graphics->playerRoll = 0.0f;
 
-				if (turnRate > 0)
-					turnRate = turnRate - turnRateAccel * m_Graphics->m_fps_Calculate;
-				if (turnRate < 0)
-					turnRate = turnRate + turnRateAccel * m_Graphics->m_fps_Calculate;
-			}
+		if (!(keyboardState[DIK_D] & 0x80) && !(keyboardState[DIK_A] & 0x80)) {
+			if (m_Graphics->playerRoll > 0)
+				m_Graphics->playerRoll -= 0.0005f;
+			if (m_Graphics->playerRoll < 0)
+				m_Graphics->playerRoll += 0.0005f;
+			if (m_Graphics->playerRoll == 0)
+				m_Graphics->playerRoll = 0.0f;
 
-			if ((mouseCurrState.lX != mouseLastState.lX) || (mouseCurrState.lY != mouseLastState.lY)
-				|| (mouseCurrState.lZ != mouseLastState.lZ))
-			{
-				m_Graphics->camYaw += mouseLastState.lX * 0.001f;
-				if ((m_Graphics->camPitch <= XMConvertToRadians(10)) && (m_Graphics->camPitch >= -XMConvertToRadians(60))) {
-					m_Graphics->camPitch -= mouseCurrState.lY * 0.001f;
-				}
-				if (m_Graphics->camPitch > XMConvertToRadians(10)) {
-					m_Graphics->camPitch = XMConvertToRadians(10);
-				}
-				if (m_Graphics->camPitch < -XMConvertToRadians(60)) {
-					m_Graphics->camPitch = -XMConvertToRadians(60);
-				}
-
-				if ((m_Graphics->charCamDist <= 80.0f) && (m_Graphics->charCamDist >= 10.0f)) {
-					m_Graphics->charCamDist -= mouseCurrState.lZ * 0.03f;
-				}
-
-				if ((m_Graphics->charCamDist > 80.0f)) {
-					m_Graphics->charCamDist += mouseCurrState.lZ * 0.03f;
-				}
-
-				if ((m_Graphics->charCamDist < 10.0f)) {
-					m_Graphics->charCamDist += mouseCurrState.lZ * 0.03f;
-				}
-
-				if ((m_Graphics->charCamHeight <= 16.0f) && (m_Graphics->charCamHeight >= 2.0f)) {
-					m_Graphics->charCamHeight -= mouseCurrState.lZ * 0.006f;
-				}
-
-				if ((m_Graphics->charCamHeight > 16.0f)) {
-					m_Graphics->charCamHeight += mouseCurrState.lZ * 0.006f;
-				}
-
-				if ((m_Graphics->charCamHeight < 2.0f)) {
-					m_Graphics->charCamHeight += mouseCurrState.lZ * 0.006f;
-				}
-
-				mouseLastState = mouseCurrState;
-			}
-
-			if (speed > 0.01 && pitch > 0) {
-				if (keyboardState[DIK_A] & 0x80)
-				{
-					if (!(turnRate < -0.001)) {
-						turnRate = turnRate - turnRateAccel * (speed / (speedGap * 1.5f)) * m_Graphics->m_fps_Calculate;
-					}
-					if (m_Graphics->playerRoll < 0.1f && pitch != 0) {
-						m_Graphics->playerRoll += 0.001f;
-					}
-				}
-				if (keyboardState[DIK_D] & 0x80)
-				{
-					if (!(turnRate > 0.001)) {
-						turnRate = turnRate + turnRateAccel * (speed / (speedGap * 1.5f)) * m_Graphics->m_fps_Calculate;
-					}
-					if (m_Graphics->playerRoll > -0.1f && pitch != 0) {
-						m_Graphics->playerRoll -= 0.001f;
-					}
-				}
-				m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
-			}
-
-			else if (speed < -0.01 && pitch < 0) {
-				if (keyboardState[DIK_D] & 0x80)
-				{
-					if (!(turnRate < -0.001)) {
-						turnRate = turnRate + turnRateAccel * (speed / speedGap) * m_Graphics->m_fps_Calculate;
-					}
-					if (m_Graphics->playerRoll > -0.1f && pitch != 0) {
-						m_Graphics->playerRoll -= 0.001f;
-					}
-				}
-				if (keyboardState[DIK_A] & 0x80)
-				{
-					if (!(turnRate > 0.001)) {
-						turnRate = turnRate - turnRateAccel * (speed / speedGap) * m_Graphics->m_fps_Calculate;
-					}
-					if (m_Graphics->playerRoll < 0.1f && pitch != 0) {
-						m_Graphics->playerRoll += 0.001f;
-					}
-
-				}
-				m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
-			}
-			else {
-				if (m_Graphics->playerRoll > 0.001)
-					m_Graphics->playerRoll -= 0.0005f;
-				else if (m_Graphics->playerRoll < 0.001)
-					m_Graphics->playerRoll += 0.0005f;
-				else
-					m_Graphics->playerRoll = 0.0f;
-
-				if (turnRate > 0)
-					turnRate = turnRate - turnRateAccel * m_Graphics->m_fps_Calculate;
-				if (turnRate < 0)
-					turnRate = turnRate + turnRateAccel * m_Graphics->m_fps_Calculate;
-				m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
-			}
-
-			m_Graphics->turnSpeed = turnRate;
-
-			if ((keyboardState[DIK_W] & 0x80) && onceKeyDowned == false)
-			{
-				if (pitch < 3) {
-					pitch++;
-					m_Sound->playPitch();
-				}
-				onceKeyDowned = true;
-			}
-			if ((keyboardState[DIK_S] & 0x80) && onceKeyDowned == false)
-			{
-				if (pitch > -1) {
-					pitch--;
-					m_Sound->playPitch();
-				}
-				onceKeyDowned = true;
-			}
-
-			if (!(keyboardState[DIK_W] & 0x80) && !(keyboardState[DIK_S] & 0x80) && onceKeyDowned == true)
-			{
-				onceKeyDowned = false;
-			}
-
-			if (speed < (speedGap * pitch)) {
-				speed = speed + speedAccel * m_Graphics->m_fps_Calculate;
-			}
-			else if (speed == (speedGap * pitch)) {
-				speed = speed;
-			}
-			else {
-				speed = speed - speedAccel * m_Graphics->m_fps_Calculate;
-			}
-
-			////////////////충돌 판정 부분//////////////////
-
-			if (speed > 0.001f) {
-				m_Graphics->currentSpeedState = FRONT;
-				if ((keyboardState[DIK_W] & 0x80)) {
-					m_Graphics->collisionBack = false;
-					m_Graphics->collisionFront = false;
-				}
-			}
-			else if (speed < 0.001f && speed > -0.001f) {
-				m_Graphics->currentSpeedState = STOP;
-			}
-			else {
-				m_Graphics->currentSpeedState = BACK;
-				if ((keyboardState[DIK_S] & 0x80)) {
-					m_Graphics->collisionBack = false;
-					m_Graphics->collisionFront = false;
-				}
-			}
-			m_Graphics->moveBackForward -= speed * m_Graphics->m_fps_Calculate;
-
-			if (!(keyboardState[DIK_SPACE] & 0X80)) {
-				isSpacePressed = false;
-				m_Graphics->spacePressTime = 0.0f;
-			}
-
-			if (m_Graphics->collisionWithContainer) {
-				if (isContainerSound == false) {
-					m_Sound->playFlag();
-					isContainerSound = true;
-				}
-
-				if ((keyboardState[DIK_SPACE] & 0X80) && (isSpacePressed == false)) {
-					lastTime = m_Graphics->m_time;
-					isSpacePressed = true;
-				}
-				if ((keyboardState[DIK_SPACE] & 0X80) && (isSpacePressed == true)) {
-					currTime = m_Graphics->m_time;
-					m_Graphics->spacePressTime = currTime - lastTime;
-					if ((currTime - lastTime) > 3.0f) {
-						m_Sound->playContainer();
-					}
-				}
-			}
-			else {
-				isContainerSound = false;
-			}
+			if (turnRate > 0)
+				turnRate = turnRate - turnRateAccel * m_Graphics->m_fps_Calculate;
+			if (turnRate < 0)
+				turnRate = turnRate + turnRateAccel * m_Graphics->m_fps_Calculate;
 		}
 
-		else {
-			
-			///자유시점 카메라 토글 on 시에 카메라 제어
-			if (!(keyboardState[DIK_A] & 0x80) || !(keyboardState[DIK_D] & 0x80)) {
-				m_Graphics->CAMmoveLeftRight = 0;
+		if ((mouseCurrState.lX != mouseLastState.lX) || (mouseCurrState.lY != mouseLastState.lY)
+			|| (mouseCurrState.lZ != mouseLastState.lZ))
+		{
+			m_Graphics->camYaw += mouseLastState.lX * 0.001f;
+			if ((m_Graphics->camPitch <= XMConvertToRadians(10)) && (m_Graphics->camPitch >= -XMConvertToRadians(60))) {
+				m_Graphics->camPitch -= mouseCurrState.lY * 0.001f;
 			}
-			if (!(keyboardState[DIK_W] & 0x80) || !(keyboardState[DIK_S] & 0x80)) {
-				m_Graphics->CAMmoveBackForward = 0;
+			if (m_Graphics->camPitch > XMConvertToRadians(10)) {
+				m_Graphics->camPitch = XMConvertToRadians(10);
+			}
+			if (m_Graphics->camPitch < -XMConvertToRadians(60)) {
+				m_Graphics->camPitch = -XMConvertToRadians(60);
 			}
 
+			if ((m_Graphics->charCamDist <= 80.0f) && (m_Graphics->charCamDist >= 10.0f)) {
+				m_Graphics->charCamDist -= mouseCurrState.lZ * 0.03f;
+			}
+
+			if ((m_Graphics->charCamDist > 80.0f)) {
+				m_Graphics->charCamDist += mouseCurrState.lZ * 0.03f;
+			}
+
+			if ((m_Graphics->charCamDist < 10.0f)) {
+				m_Graphics->charCamDist += mouseCurrState.lZ * 0.03f;
+			}
+
+			if ((m_Graphics->charCamHeight <= 16.0f) && (m_Graphics->charCamHeight >= 2.0f)) {
+				m_Graphics->charCamHeight -= mouseCurrState.lZ * 0.006f;
+			}
+
+			if ((m_Graphics->charCamHeight > 16.0f)) {
+				m_Graphics->charCamHeight += mouseCurrState.lZ * 0.006f;
+			}
+
+			if ((m_Graphics->charCamHeight < 2.0f)) {
+				m_Graphics->charCamHeight += mouseCurrState.lZ * 0.006f;
+			}
+
+			mouseLastState = mouseCurrState;
+		}
+
+		if (speed > 0.01 && pitch > 0) {
 			if (keyboardState[DIK_A] & 0x80)
 			{
-				m_Graphics->CAMmoveLeftRight -= speed4FreeLook * m_Graphics->m_fps_Calculate;
+				if (!(turnRate < -0.001)) {
+					turnRate = turnRate - turnRateAccel * (speed / (speedGap * 1.5f)) * m_Graphics->m_fps_Calculate;
+				}
+				if (m_Graphics->playerRoll < 0.1f && pitch != 0) {
+					m_Graphics->playerRoll += 0.001f;
+				}
 			}
 			if (keyboardState[DIK_D] & 0x80)
 			{
-				m_Graphics->CAMmoveLeftRight += speed4FreeLook * m_Graphics->m_fps_Calculate;
+				if (!(turnRate > 0.001)) {
+					turnRate = turnRate + turnRateAccel * (speed / (speedGap * 1.5f)) * m_Graphics->m_fps_Calculate;
+				}
+				if (m_Graphics->playerRoll > -0.1f && pitch != 0) {
+					m_Graphics->playerRoll -= 0.001f;
+				}
 			}
-			if (keyboardState[DIK_W] & 0x80)
-			{
-				m_Graphics->CAMmoveBackForward += speed4FreeLook * m_Graphics->m_fps_Calculate;
-			}
-			if (keyboardState[DIK_S] & 0x80)
-			{
-				m_Graphics->CAMmoveBackForward -= speed4FreeLook * m_Graphics->m_fps_Calculate;
-			}
-			if ((mouseCurrState.lX != mouseLastState.lX) || (mouseCurrState.lY != mouseLastState.lY))
-			{
-				m_Graphics->camYaw += mouseLastState.lX * 0.001f;
-
-				m_Graphics->camPitch += mouseCurrState.lY * 0.001f;
-
-				mouseLastState = mouseCurrState;
-			}
-
+			m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
 		}
+
+		else if (speed < -0.01 && pitch < 0) {
+			if (keyboardState[DIK_D] & 0x80)
+			{
+				if (!(turnRate < -0.001)) {
+					turnRate = turnRate + turnRateAccel * (speed / speedGap) * m_Graphics->m_fps_Calculate;
+				}
+				if (m_Graphics->playerRoll > -0.1f && pitch != 0) {
+					m_Graphics->playerRoll -= 0.001f;
+				}
+			}
+			if (keyboardState[DIK_A] & 0x80)
+			{
+				if (!(turnRate > 0.001)) {
+					turnRate = turnRate - turnRateAccel * (speed / speedGap) * m_Graphics->m_fps_Calculate;
+				}
+				if (m_Graphics->playerRoll < 0.1f && pitch != 0) {
+					m_Graphics->playerRoll += 0.001f;
+				}
+
+			}
+			m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
+		}
+		else {
+			if (m_Graphics->playerRoll > 0.001)
+				m_Graphics->playerRoll -= 0.0005f;
+			else if (m_Graphics->playerRoll < 0.001)
+				m_Graphics->playerRoll += 0.0005f;
+			else
+				m_Graphics->playerRoll = 0.0f;
+
+			if (turnRate > 0)
+				turnRate = turnRate - turnRateAccel * m_Graphics->m_fps_Calculate;
+			if (turnRate < 0)
+				turnRate = turnRate + turnRateAccel * m_Graphics->m_fps_Calculate;
+			m_Graphics->playerYaw += turnRate * m_Graphics->m_fps_Calculate;
+		}
+
+		m_Graphics->turnSpeed = turnRate;
+
+		if ((keyboardState[DIK_W] & 0x80) && onceKeyDowned == false)
+		{
+			if (pitch < 3) {
+				pitch++;
+				m_Sound->playPitch();
+			}
+			onceKeyDowned = true;
+		}
+		if ((keyboardState[DIK_S] & 0x80) && onceKeyDowned == false)
+		{
+			if (pitch > -1) {
+				pitch--;
+				m_Sound->playPitch();
+			}
+			onceKeyDowned = true;
+		}
+
+		if (!(keyboardState[DIK_W] & 0x80) && !(keyboardState[DIK_S] & 0x80) && onceKeyDowned == true)
+		{
+			onceKeyDowned = false;
+		}
+
+		if (speed < (speedGap * pitch)) {
+			speed = speed + speedAccel * m_Graphics->m_fps_Calculate;
+		}
+		else if (speed == (speedGap * pitch)) {
+			speed = speed;
+		}
+		else {
+			speed = speed - speedAccel * m_Graphics->m_fps_Calculate;
+		}
+
+		////////////////충돌 판정 부분//////////////////
+
+		if (speed > 0.001f) {
+			m_Graphics->currentSpeedState = FRONT;
+			if ((keyboardState[DIK_W] & 0x80)) {
+				m_Graphics->collisionBack = false;
+				m_Graphics->collisionFront = false;
+			}
+		}
+		else if (speed < 0.001f && speed > -0.001f) {
+			m_Graphics->currentSpeedState = STOP;
+		}
+		else {
+			m_Graphics->currentSpeedState = BACK;
+			if ((keyboardState[DIK_S] & 0x80)) {
+				m_Graphics->collisionBack = false;
+				m_Graphics->collisionFront = false;
+			}
+		}
+		m_Graphics->moveBackForward -= speed * m_Graphics->m_fps_Calculate;
+
+		if (!(keyboardState[DIK_SPACE] & 0X80)) {
+			isSpacePressed = false;
+			m_Graphics->spacePressTime = 0.0f;
+		}
+
+		if (m_Graphics->collisionWithContainer) {
+			if (isContainerSound == false) {
+				m_Sound->playFlag();
+				isContainerSound = true;
+			}
+
+			if ((keyboardState[DIK_SPACE] & 0X80) && (isSpacePressed == false)) {
+				lastTime = m_Graphics->m_time;
+				isSpacePressed = true;
+			}
+			if ((keyboardState[DIK_SPACE] & 0X80) && (isSpacePressed == true)) {
+				currTime = m_Graphics->m_time;
+				m_Graphics->spacePressTime = currTime - lastTime;
+				if ((currTime - lastTime) > 3.0f) {
+					m_Sound->playContainer();
+				}
+			}
+		}
+		else {
+			isContainerSound = false;
+		}
+
 		if (m_Graphics->collisionWithFlag) {
 			m_Sound->playFlag();
 		}

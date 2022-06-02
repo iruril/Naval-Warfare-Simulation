@@ -42,10 +42,6 @@ public:
 
 	void RenderReflection(float, float, float, float, XMVECTOR, XMVECTOR, XMVECTOR, float, float, float);
 	void GetReflectionViewMatrix(XMMATRIX&);
-
-	void RenderFreeLookCam(float, float, float, float, XMVECTOR, XMVECTOR);
-	void RenderFreeLookCamReflection(float, float, float, float, XMVECTOR, XMVECTOR, float, float);
-
 	XMVECTOR GetLookDir();
 
 	XMVECTOR camPosition;

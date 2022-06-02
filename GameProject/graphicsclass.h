@@ -236,7 +236,8 @@ private:
 	BitmapClass* m_Fail;
 	BitmapClass* m_Menu;
 	BitmapClass* m_UIBGforTitle;
-	BitmapClass* m_ResultScene;
+	BitmapClass* m_SuccessResultScene;
+	BitmapClass* m_FailResultScene;
 	BitmapClass* m_MainTitle;
 	BitmapClass* m_RetrytMenu;
 	BitmapClass* m_inGameMenu;
